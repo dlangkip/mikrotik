@@ -885,5 +885,7 @@
     "Enable_CSRF_Validation": "Enable CSRF Validation",
     "Cross_site_request_forgery": "Cross-site request forgery",
     "Validity_Periode": "Validity Periode",
-    "Insufficient_balance": "Insufficient balance"
+    "Insufficient_balance": "Insufficient balance",
+    "First_Name": "First Name",
+    "Last_Name": "Last Name"
 }

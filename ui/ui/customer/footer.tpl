@@ -11,9 +11,8 @@
     </footer>
 {else}
     <footer class="main-footer">
-        PHPNuxBill by <a href="https://github.com/hotspotbilling/phpnuxbill" rel="nofollow noreferrer noopener"
-            target="_blank">iBNuX</a>, Theme by <a href="https://adminlte.io/" rel="nofollow noreferrer noopener"
-            target="_blank">AdminLTE</a>
+        BenFex by <a href="" rel="nofollow noreferrer noopener"
+            target="_blank">Dlang</a>
         <div class="pull-right">
             <a href="javascript:showPrivacy()">Privacy</a>
             &bull;
