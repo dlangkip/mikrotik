@@ -1479,7 +1479,7 @@
                             </a>
                         </li>
                         <li {if $_system_menu eq 'community' }class="active" {/if}>
-                            <a href="{$_url}community">
+                           <a href="{$_url}community">
                                 <i class="ion ion-chatboxes"></i>
                                 <span class="text">Community</span>
                             </a>
