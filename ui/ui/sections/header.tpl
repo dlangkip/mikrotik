@@ -1150,7 +1150,7 @@
     <div class="wrapper">
         <header class="main-header">
             <a href="{$_url}dashboard" class="logo">
-                <span class="logo-mini"><b>N</b>uX</span>
+                <span class="logo-mini"><b>K</b>IP</span>
                 <span class="logo-lg">{$_c['CompanyName']}</span>
             </a>
             <nav class="navbar navbar-static-top">
@@ -1224,17 +1224,18 @@
         <aside class="main-sidebar">
             <section class="sidebar">
                 <ul class="sidebar-menu" data-widget="tree">
-                    <li {if $_system_menu eq 'dashboard' }class="active" {/if}>
-                        <a href="{$_url}dashboard">
-                            <i class="ion ion-monitor"></i>
-                            <span>{Lang::T('Dashboard')}</span>
-                        </a>
-                    </li>
+                      {*  <li style="text-align: center;"><span>Dashboard</span></li> <br> *}
+                        <li {if $_system_menu eq 'dashboard' }class="active" {/if}>
+                            <a href="{$_url}dashboard">
+                                <i class="ion ion-home"></i>
+                                <span>{Lang::T('Home')}</span>
+                            </a>
+                        </li>
                     {$_MENU_AFTER_DASHBOARD}
                     {if !in_array($_admin['user_type'],['Report'])}
                         <li class="{if in_array($_system_menu, ['customers', 'map'])}active{/if} treeview">
                             <a href="#">
-                                <i class="fa fa-users"></i> <span>{Lang::T('Customer')}</span>
+                                <i class="fa fa-users"></i> <span>{Lang::T('Clients')}</span>
                                 <span class="pull-right-container">
                                     <i class="fa fa-angle-left pull-right"></i>
                                 </span>
@@ -1278,7 +1279,7 @@
                     {if in_array($_admin['user_type'],['SuperAdmin','Admin'])}
                         <li class="{if $_system_menu eq 'services'}active{/if} treeview">
                             <a href="#">
-                                <i class="ion ion-cube"></i> <span>{Lang::T('Internet Plan')}</span>
+                                <i class="ion ion-cube"></i> <span>{Lang::T('Stations')}</span>
                                 <span class="pull-right-container">
                                     <i class="fa fa-angle-left pull-right"></i>
                                 </span>
@@ -1321,7 +1322,7 @@
                     {$_MENU_AFTER_REPORTS}
                     <li class="{if $_system_menu eq 'message'}active{/if} treeview">
                         <a href="#">
-                            <i class="ion ion-android-chat"></i> <span>{Lang::T('Send Message')}</span>
+                            <i class="ion ion-android-chat"></i> <span>{Lang::T('SMS Client')}</span>
                             <span class="pull-right-container">
                                 <i class="fa fa-angle-left pull-right"></i>
                             </span>
@@ -1468,6 +1469,7 @@
                     {/if}
                     {$_MENU_AFTER_LOGS}
                     {if in_array($_admin['user_type'],['SuperAdmin','Admin'])}
+                    {*
                         <li {if $_routes[1] eq 'docs' }class="active" {/if}>
                             <a href="{if $_c['docs_clicked'] != 'yes'}{$_url}settings/docs{else}./docs/{/if}">
                                 <i class="ion ion-ios-bookmarks"></i>
@@ -1476,14 +1478,17 @@
                                     <span class="pull-right-container"><small
                                             class="label pull-right bg-green">New</small></span>
                                 {/if}
-                            </a>
+                            </a>                       
                         </li>
+                        *}
+                        {* 
                         <li {if $_system_menu eq 'community' }class="active" {/if}>
                            <a href="{$_url}community">
                                 <i class="ion ion-chatboxes"></i>
                                 <span class="text">Community</span>
                             </a>
                         </li>
+                        *}
                     {/if}
                     {$_MENU_AFTER_COMMUNITY}
                 </ul>
