@@ -5,7 +5,7 @@
  *
  * Payment Gateway M-Pesa
  *
- * created by @nuxbill
+ * created by @Kiprotich
  *
  **/
 
