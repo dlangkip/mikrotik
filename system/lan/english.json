@@ -1071,5 +1071,7 @@
     "Assign_NAS_to_Router": "Assign NAS to Router",
     "Create_Bandwidth_Package_for_expired_Internet_Package": "Create Bandwidth Package for expired Internet Package",
     "Burst_Limit_Preset": "Burst Limit Preset",
-    "Add_Port_Pool": "Add Port Pool"
+    "Add_Port_Pool": "Add Port Pool",
+    "Single_Admin_Session": "Single Admin Session",
+    "Expired_Cronjob_Every_5_Minutes__Recommended_": "Expired Cronjob Every 5 Minutes [Recommended]"
 }
