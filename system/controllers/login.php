@@ -313,9 +313,45 @@ switch ($do) {
             $ui->assign('code', alphanumeric(_get('code'), "-"));
             $ui->display('customer/login-noreg.tpl');
         } else {
+            $UPLOAD_URL_PATH = str_replace($root_path, '',  $UPLOAD_PATH);
+            if (!empty($config['login_page_logo']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_logo'])) {
+                $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_logo'];
+            } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.png')) {
+                $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.png';
+            } else {
+                $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.default.png';
+            }
+
+            if (!empty($config['login_page_wallpaper']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_wallpaper'])) {
+                $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_wallpaper'];
+            } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.png')) {
+                $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.png';
+            } else {
+                $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.default.png';
+            }
+
+            if (!empty($config['login_page_favicon']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_favicon'])) {
+                $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_favicon'];
+            } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.png')) {
+                $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.png';
+            } else {
+                $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.default.png';
+            }
+
+            $ui->assign('login_logo', $login_logo);
+            $ui->assign('wallpaper', $wallpaper);
+            $ui->assign('favicon', $favicon);
             $ui->assign('csrf_token', $csrf_token);
             $ui->assign('_title', Lang::T('Login'));
-            $ui->display('customer/login.tpl');
+            switch ($config['login_page_type']) {
+                case 'custom':
+                    $ui->display('customer/login-custom-' . $config['login_Page_template'] . '.tpl');
+                    break;
+                default:
+                    $ui->display('customer/login.tpl');
+                    break;
+            }
         }
+
         break;
 }

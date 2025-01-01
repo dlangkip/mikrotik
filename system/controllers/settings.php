@@ -81,6 +81,35 @@ switch ($action) {
             $logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'logo.default.png';
         }
         $ui->assign('logo', $logo);
+
+        if (!empty($config['login_page_logo']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_logo'])) {
+            $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_logo'];
+        } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.png')) {
+            $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.png';
+        } else {
+            $login_logo = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'login-logo.default.png';
+        }
+
+        if (!empty($config['login_page_wallpaper']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_wallpaper'])) {
+            $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_wallpaper'];
+        } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.png')) {
+            $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.png';
+        } else {
+            $wallpaper = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'wallpaper.default.png';
+        }
+
+        if (!empty($config['login_page_favicon']) && file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_favicon'])) {
+            $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . $config['login_page_favicon'];
+        } elseif (file_exists($UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.png')) {
+            $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.png';
+        } else {
+            $favicon = $UPLOAD_URL_PATH . DIRECTORY_SEPARATOR . 'favicon.default.png';
+        }
+        
+        $ui->assign('login_logo', $login_logo);
+        $ui->assign('wallpaper', $wallpaper);
+        $ui->assign('favicon', $favicon);
+
         $themes = [];
         $files = scandir('ui/themes/');
         foreach ($files as $file) {
@@ -88,6 +117,20 @@ switch ($action) {
                 $themes[] = $file;
             }
         }
+
+        $template_files = glob('ui/ui/customer/login-custom-*.tpl');
+        $templates = [];
+
+        foreach ($template_files as $file) {
+            $parts = explode('-', basename($file, '.tpl'));
+            $template_identifier = $parts[2] ?? 'unknown';
+            $templates[] = [
+                'filename' => basename($file),
+                'value' => $template_identifier,
+                'name' => str_replace('_', ' ', ucfirst($template_identifier))
+            ];
+        }
+
         $r = ORM::for_table('tbl_routers')->find_many();
         $ui->assign('r', $r);
         if (function_exists("shell_exec")) {
@@ -111,6 +154,10 @@ switch ($action) {
                 $d->save();
             }
         }
+        if (empty($config['mikrotik_sms_command'])) {
+            $config['mikrotik_sms_command'] = "/tool sms send";
+        }
+        $ui->assign('template_files', $templates);
         $ui->assign('_c', $config);
         $ui->assign('php', $php);
         $ui->assign('dir', str_replace('controllers', '', __DIR__));
@@ -162,6 +209,10 @@ switch ($action) {
                 }
             }
             // Save all settings including tax system
+            $_POST['man_fields_email'] = isset($_POST['man_fields_email']) ? 'yes' : 'no';
+            $_POST['man_fields_fname'] = isset($_POST['man_fields_fname']) ? 'yes' : 'no';
+            $_POST['man_fields_address'] = isset($_POST['man_fields_address']) ? 'yes' : 'no';
+            $_POST['man_fields_custom'] = isset($_POST['man_fields_custom']) ? 'yes' : 'no';
             $enable_session_timeout = isset($_POST['enable_session_timeout']) ? 1 : 0;
             $_POST['enable_session_timeout'] = $enable_session_timeout;
             foreach ($_POST as $key => $value) {
@@ -176,27 +227,102 @@ switch ($action) {
                     $d->save();
                 }
             }
-            //checkbox
-            $checks = ['hide_mrc', 'hide_tms', 'hide_aui', 'hide_al', 'hide_uet', 'hide_vs', 'hide_pg'];
-            foreach ($checks as $check) {
-                if (!isset($_POST[$check])) {
-                    $d = ORM::for_table('tbl_appconfig')->where('setting', $check)->find_one();
-                    if ($d) {
-                        $d->value = 'no';
-                        $d->save();
-                    } else {
-                        $d = ORM::for_table('tbl_appconfig')->create();
-                        $d->setting = $check;
-                        $d->value = 'no';
-                        $d->save();
-                    }
-                }
-            }
-
             _log('[' . $admin['username'] . ']: ' . Lang::T('Settings Saved Successfully'), $admin['user_type'], $admin['id']);
 
             r2(U . 'settings/app', 's', Lang::T('Settings Saved Successfully'));
         }
+        break;
+
+    case 'login-page-post':
+        // Login page post
+        $login_page_title = _post('login_page_head');
+        $login_page_description = _post('login_page_description');
+        $login_Page_template = _post('login_Page_template');
+        $login_page_type = _post('login_page_type');
+        $csrf_token = _post('csrf_token');
+
+        if (!Csrf::check($csrf_token)) {
+            r2(U . 'settings/app', 'e', Lang::T('Invalid or Expired CSRF Token') . ".");
+        }
+
+        if ($login_page_type == 'custom' && (empty($login_Page_template) || empty($login_page_title) || empty($login_page_description))) {
+            r2(U . 'settings/app', 'e', 'Please fill all required fields');
+            return;
+        }
+
+        if (strlen($login_page_title) > 25) {
+            r2(U . 'settings/app', 'e', 'Login page title must not exceed 25 characters');
+            return;
+        }
+        if (strlen($login_page_description) > 100) {
+            r2(U . 'settings/app', 'e', 'Login page description must not exceed 50 characters');
+            return;
+        }
+
+        $settings = [
+            'login_page_head' => $login_page_title,
+            'login_page_description' => $login_page_description,
+            'login_Page_template' => $login_Page_template,
+            'login_page_type' => $login_page_type,
+        ];
+
+        $image_paths = [];
+        $allowed_types = ['image/jpeg', 'image/png'];
+
+        if ($_FILES['login_page_favicon']['name'] != '') {
+            $favicon_type = $_FILES['login_page_favicon']['type'];
+            if (in_array($favicon_type, $allowed_types) && preg_match('/\.(jpg|jpeg|png)$/i', $_FILES['login_page_favicon']['name'])) {
+                $extension = pathinfo($_FILES['login_page_favicon']['name'], PATHINFO_EXTENSION);
+                $favicon_path = $UPLOAD_PATH . DIRECTORY_SEPARATOR . uniqid('favicon_') . '.' . $extension;
+                File::resizeCropImage($_FILES['login_page_favicon']['tmp_name'], $favicon_path, 16, 16, 100);
+                $settings['login_page_favicon'] = basename($favicon_path); // Save dynamic file name
+                if (file_exists($_FILES['login_page_favicon']['tmp_name'])) unlink($_FILES['login_page_favicon']['tmp_name']);
+            } else {
+                r2(U . 'settings/app', 'e', 'Favicon must be a JPG, JPEG, or PNG image.');
+            }
+        }
+
+        if ($_FILES['login_page_wallpaper']['name'] != '') {
+            $wallpaper_type = $_FILES['login_page_wallpaper']['type'];
+            if (in_array($wallpaper_type, $allowed_types) && preg_match('/\.(jpg|jpeg|png)$/i', $_FILES['login_page_wallpaper']['name'])) {
+                $extension = pathinfo($_FILES['login_page_wallpaper']['name'], PATHINFO_EXTENSION);
+                $wallpaper_path = $UPLOAD_PATH . DIRECTORY_SEPARATOR . uniqid('wallpaper_') . '.' . $extension;
+                File::resizeCropImage($_FILES['login_page_wallpaper']['tmp_name'], $wallpaper_path, 1920, 1080, 100);
+                $settings['login_page_wallpaper'] = basename($wallpaper_path); // Save dynamic file name
+                if (file_exists($_FILES['login_page_wallpaper']['tmp_name'])) unlink($_FILES['login_page_wallpaper']['tmp_name']);
+            } else {
+                r2(U . 'settings/app', 'e', 'Wallpaper must be a JPG, JPEG, or PNG image.');
+            }
+        }
+
+        if ($_FILES['login_page_logo']['name'] != '') {
+            $logo_type = $_FILES['login_page_logo']['type'];
+            if (in_array($logo_type, $allowed_types) && preg_match('/\.(jpg|jpeg|png)$/i', $_FILES['login_page_logo']['name'])) {
+                $extension = pathinfo($_FILES['login_page_logo']['name'], PATHINFO_EXTENSION);
+                $logo_path = $UPLOAD_PATH . DIRECTORY_SEPARATOR . uniqid('logo_') . '.' . $extension;
+                File::resizeCropImage($_FILES['login_page_logo']['tmp_name'], $logo_path, 300, 60, 100);
+                $settings['login_page_logo'] = basename($logo_path); // Save dynamic file name
+                if (file_exists($_FILES['login_page_logo']['tmp_name'])) unlink($_FILES['login_page_logo']['tmp_name']);
+            } else {
+                r2(U . 'settings/app', 'e', 'Logo must be a JPG, JPEG, or PNG image.');
+            }
+        }
+
+        foreach ($settings as $key => $value) {
+            $d = ORM::for_table('tbl_appconfig')->where('setting', $key)->find_one();
+            if ($d) {
+                $d->value = $value;
+                $d->save();
+            } else {
+                $d = ORM::for_table('tbl_appconfig')->create();
+                $d->setting = $key;
+                $d->value = $value;
+                $d->save();
+            }
+        }
+
+        _log('[' . $admin['username'] . ']: ' . Lang::T('Login Page Settings Saved Successfully'), $admin['user_type'], $admin['id']);
+        r2(U . 'settings/app', 's', Lang::T('Login Page Settings Saved Successfully'));
         break;
 
     case 'localisation':
@@ -474,19 +600,19 @@ switch ($action) {
             }
         }
         if ($d) {
-            if(isset($routes['3']) && $routes['3'] == 'deletePhoto'){
-                if($d['photo'] != '' && strpos($d['photo'], 'default') === false){
-                    if(file_exists($UPLOAD_PATH.$d['photo']) && strpos($d['photo'], 'default') === false){
-                        unlink($UPLOAD_PATH.$d['photo']);
-                        if(file_exists($UPLOAD_PATH.$d['photo'].'.thumb.jpg')){
-                            unlink($UPLOAD_PATH.$d['photo'].'.thumb.jpg');
+            if (isset($routes['3']) && $routes['3'] == 'deletePhoto') {
+                if ($d['photo'] != '' && strpos($d['photo'], 'default') === false) {
+                    if (file_exists($UPLOAD_PATH . $d['photo']) && strpos($d['photo'], 'default') === false) {
+                        unlink($UPLOAD_PATH . $d['photo']);
+                        if (file_exists($UPLOAD_PATH . $d['photo'] . '.thumb.jpg')) {
+                            unlink($UPLOAD_PATH . $d['photo'] . '.thumb.jpg');
                         }
                     }
                     $d->photo = '/admin.default.png';
                     $d->save();
                     $ui->assign('notify_t', 's');
                     $ui->assign('notify', 'You have successfully deleted the photo');
-                }else{
+                } else {
                     $ui->assign('notify_t', 'e');
                     $ui->assign('notify', 'No photo found to delete');
                 }
@@ -657,44 +783,44 @@ switch ($action) {
                 if (function_exists('imagecreatetruecolor')) {
                     $hash = md5_file($_FILES['photo']['tmp_name']);
                     $subfolder = substr($hash, 0, 2);
-                    $folder = $UPLOAD_PATH . DIRECTORY_SEPARATOR . 'photos'. DIRECTORY_SEPARATOR;
-                    if(!file_exists($folder)){
+                    $folder = $UPLOAD_PATH . DIRECTORY_SEPARATOR . 'photos' . DIRECTORY_SEPARATOR;
+                    if (!file_exists($folder)) {
                         mkdir($folder);
                     }
-                    $folder = $UPLOAD_PATH . DIRECTORY_SEPARATOR . 'photos'. DIRECTORY_SEPARATOR. $subfolder. DIRECTORY_SEPARATOR;
-                    if(!file_exists($folder)){
+                    $folder = $UPLOAD_PATH . DIRECTORY_SEPARATOR . 'photos' . DIRECTORY_SEPARATOR . $subfolder . DIRECTORY_SEPARATOR;
+                    if (!file_exists($folder)) {
                         mkdir($folder);
                     }
                     $imgPath = $folder . $hash . '.jpg';
-                    if (!file_exists($imgPath)){
+                    if (!file_exists($imgPath)) {
                         File::resizeCropImage($_FILES['photo']['tmp_name'], $imgPath, 1600, 1600, 100);
                     }
-                    if (!file_exists($imgPath.'.thumb.jpg')){
-                        if(_post('faceDetect') == 'yes'){
-                            try{
+                    if (!file_exists($imgPath . '.thumb.jpg')) {
+                        if (_post('faceDetect') == 'yes') {
+                            try {
                                 $detector = new svay\FaceDetector();
                                 $detector->setTimeout(5000);
                                 $detector->faceDetect($imgPath);
-                                $detector->cropFaceToJpeg($imgPath.'.thumb.jpg', false);
-                            }catch (Exception $e) {
-                                File::makeThumb($imgPath, $imgPath.'.thumb.jpg', 200);
+                                $detector->cropFaceToJpeg($imgPath . '.thumb.jpg', false);
+                            } catch (Exception $e) {
+                                File::makeThumb($imgPath, $imgPath . '.thumb.jpg', 200);
                             } catch (Throwable $e) {
-                                File::makeThumb($imgPath, $imgPath.'.thumb.jpg', 200);
+                                File::makeThumb($imgPath, $imgPath . '.thumb.jpg', 200);
                             }
-                        }else{
-                            File::makeThumb($imgPath, $imgPath.'.thumb.jpg', 200);
+                        } else {
+                            File::makeThumb($imgPath, $imgPath . '.thumb.jpg', 200);
                         }
                     }
-                    if(file_exists($imgPath)){
-                        if($d['photo'] != ''  && strpos($d['photo'], 'default') === false){
-                            if(file_exists($UPLOAD_PATH.$d['photo'])){
-                                unlink($UPLOAD_PATH.$d['photo']);
-                                if(file_exists($UPLOAD_PATH.$d['photo'].'.thumb.jpg')){
-                                    unlink($UPLOAD_PATH.$d['photo'].'.thumb.jpg');
+                    if (file_exists($imgPath)) {
+                        if ($d['photo'] != ''  && strpos($d['photo'], 'default') === false) {
+                            if (file_exists($UPLOAD_PATH . $d['photo'])) {
+                                unlink($UPLOAD_PATH . $d['photo']);
+                                if (file_exists($UPLOAD_PATH . $d['photo'] . '.thumb.jpg')) {
+                                    unlink($UPLOAD_PATH . $d['photo'] . '.thumb.jpg');
                                 }
                             }
                         }
-                        $d->photo = '/photos/'. $subfolder. '/'. $hash. '.jpg';
+                        $d->photo = '/photos/' . $subfolder . '/' . $hash . '.jpg';
                     }
                     if (file_exists($_FILES['photo']['tmp_name'])) unlink($_FILES['photo']['tmp_name']);
                 } else {
