@@ -88,9 +88,9 @@
                         $(this).html(
                             `<span class="loading"></span>`
                         );
-                        // setTimeout(() => {
-                        //     $(this).prop("disabled", true);
-                        // }, 100);
+                        setTimeout(() => {
+                            $(this).prop("disabled", true);
+                        }, 100);
                     }, false);
                 } else {
                     if (el.attachEvent) { // IE before version 9
@@ -98,9 +98,9 @@
                             $(this).html(
                                 `<span class="loading"></span>`
                             );
-                            // setTimeout(() => {
-                            //     $(this).prop("disabled", true);
-                            // }, 100);
+                            setTimeout(() => {
+                                $(this).prop("disabled", true);
+                            }, 100);
                         });
                     }
                 }
@@ -112,16 +112,33 @@
             }, 500);
         });
 
+        function ask(field, text){
+            if (confirm(text)) {
+                setTimeout(() => {
+                    field.innerHTML = field.innerHTML.replace(`<span class="loading"></span>`, '');
+                    field.removeAttribute("disabled");
+                }, 5000);
+                return true;
+            } else {
+                setTimeout(() => {
+                    field.innerHTML = field.innerHTML.replace(`<span class="loading"></span>`, '');
+                    field.removeAttribute("disabled");
+                }, 500);
+                return false;
+            }
+        }
+
         function apiGetText(){
             var el = listAttApi[posAttApi];
-            $.get(el.getAttribute('api-get-text'), function(data) {
-                el.innerHTML = data;
-                posAttApi++;
-                if(posAttApi < listAttApi.length){
-                    apiGetText();
-                }
-            });
-
+            if(el != undefined){
+                $.get(el.getAttribute('api-get-text'), function(data) {
+                    el.innerHTML = data;
+                    posAttApi++;
+                    if(posAttApi < listAttApi.length){
+                        apiGetText();
+                    }
+                });
+            }
         }
 
         function setKolaps() {

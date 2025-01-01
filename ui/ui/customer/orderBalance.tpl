@@ -4,7 +4,7 @@
     <div class="col-sm-12">
         {if $_c['enable_balance'] == 'yes'}
             <div class="box box-solid box-success bg-gray-light">
-                <div class="box-header">{Lang::T('Buy Balance Plans')}</div>
+                <div class="box-header">{Lang::T('Buy Balance Package')}</div>
                 <div class="box-body row">
                     {foreach $plans_balance as $plan}
                         <div class="col col-md-4">
@@ -29,7 +29,7 @@
                                 </div>
                                 <div class="box-body">
                                     <a href="{$_url}order/gateway/0/{$plan['id']}"
-                                        onclick="return confirm('{Lang::T('Buy Balance')}?')"
+                                        onclick="return ask(this, '{Lang::T('Buy Balance')}?')"
                                         class="btn btn-sm btn-block btn-primary">{Lang::T('Buy')}</a>
                                 </div>
                             </div>
@@ -54,7 +54,7 @@
                                         </div>
                                     </div>
                                     <div class="box-body">
-                                        <button onclick="return confirm('{Lang::T('Buy Balance')}?')"
+                                        <button onclick="return ask(this, '{Lang::T('Buy Balance')}?')"
                                             class="btn btn-sm btn-block btn-primary">{Lang::T('Buy')}</button>
                                     </div>
                                 </div>

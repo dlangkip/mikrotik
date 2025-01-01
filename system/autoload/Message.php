@@ -48,7 +48,7 @@ class Message
                     }
                 } else {
                     try {
-                        self::sendSMS($config['sms_url'], $phone, $txt);
+                        self::MikrotikSendSMS($config['sms_url'], $phone, $txt);
                     } catch (Exception $e) {
                         // ignore, add to logs
                         _log("Failed to send SMS using Mikrotik.\n" . $e->getMessage(), 'SMS', 0);
@@ -64,7 +64,7 @@ class Message
 
     public static function MikrotikSendSMS($router_name, $to, $message)
     {
-        global $_app_stage, $client_m;
+        global $_app_stage, $client_m, $config;
         if ($_app_stage == 'demo') {
             return null;
         }
@@ -73,7 +73,10 @@ class Message
             $iport = explode(":", $mikrotik['ip_address']);
             $client_m = new RouterOS\Client($iport[0], $mikrotik['username'], $mikrotik['password'], ($iport[1]) ? $iport[1] : null);
         }
-        $smsRequest = new RouterOS\Request('/tool sms send');
+        if(empty($config['mikrotik_sms_command'])){
+            $config['mikrotik_sms_command'] = "/tool sms send";
+        }
+        $smsRequest = new RouterOS\Request($config['mikrotik_sms_command']);
         $smsRequest
             ->setArgument('phone-number', $to)
             ->setArgument('message', $message);
@@ -172,17 +175,43 @@ class Message
         $msg = str_replace('[[plan]]', $package, $msg);
         $msg = str_replace('[[package]]', $package, $msg);
         $msg = str_replace('[[price]]', Lang::moneyFormat($price), $msg);
+        // Calculate bills and additional costs
         list($bills, $add_cost) = User::getBills($customer['id']);
+
+        // Initialize note and total variables
+        $note = "";
+        $total = $price;
+
+        // Add bills to the note if there are any additional costs
         if ($add_cost != 0) {
-            $note = "";
             foreach ($bills as $k => $v) {
-                $note .= $k . " : " . Lang::moneyFormat($v) . "\n";
+            $note .= $k . " : " . Lang::moneyFormat($v) . "\n";
             }
-            $note .= "Total : " . Lang::moneyFormat($add_cost + $price) . "\n";
-            $msg = str_replace('[[bills]]', $note, $msg);
-        } else {
-            $msg = str_replace('[[bills]]', '', $msg);
+            $total += $add_cost;
         }
+
+        // Calculate tax
+        $tax = 0;
+        $tax_enable = isset($config['enable_tax']) ? $config['enable_tax'] : 'no';
+        if ($tax_enable === 'yes') {
+            $tax_rate_setting = isset($config['tax_rate']) ? $config['tax_rate'] : null;
+            $custom_tax_rate = isset($config['custom_tax_rate']) ? (float)$config['custom_tax_rate'] : null;
+
+            $tax_rate = ($tax_rate_setting === 'custom') ? $custom_tax_rate : $tax_rate_setting;
+            $tax = Package::tax($price, $tax_rate);
+
+            if ($tax != 0) {
+                $note .= "Tax : " . Lang::moneyFormat($tax) . "\n";
+                $total += $tax;
+            }
+        }
+
+        // Add total to the note
+        $note .= "Total : " . Lang::moneyFormat($total) . "\n";
+
+        // Replace placeholders in the message
+        $msg = str_replace('[[bills]]', $note, $msg);
+
         if ($ds) {
             $msg = str_replace('[[expired_date]]', Lang::dateAndTimeFormat($ds['expiration'], $ds['time']), $msg);
         } else {
@@ -205,6 +234,7 @@ class Message
                 $msg = str_replace('[[payment_link]]', '', $msg);
             }
         }
+
 
         if (
             !empty($customer['phonenumber']) && strlen($customer['phonenumber']) > 5

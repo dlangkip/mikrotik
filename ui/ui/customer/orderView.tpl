@@ -72,7 +72,7 @@
                                 </tr>
                             {/if}
                             <tr>
-                                <td>{Lang::T('Plan Name')}</td>
+                                <td>{Lang::T('Package Name')}</td>
                                 <td>{$plan['name_plan']}</td>
                             </tr>
                             {if $add_cost!=0}
@@ -88,7 +88,7 @@
                                 </tr>
                             {/if}
                             <tr>
-                                <td>{Lang::T('Plan Price')}{if $add_cost!=0}<small> +
+                                <td>{Lang::T('Package Price')}{if $add_cost!=0}<small> +
                                         {Lang::T('Additional Cost')}{/if}</small></td>
                                 <td
                                     style="font-size: large; font-weight:bolder; font-family: 'Courier New', Courier, monospace; ">
@@ -123,11 +123,13 @@
                                     <td>{Lang::T('Validity Periode')}</td>
                                     <td>{$plan['validity']} {$plan['validity_unit']}</td>
                                 </tr>
-                                <tr>
-                                    <td>{Lang::T('Bandwidth Plans')}</td>
-                                    <td>{$bandw['name_bw']}<br>{$bandw['rate_down']}{$bandw['rate_down_unit']}/{$bandw['rate_up']}{$bandw['rate_up_unit']}
-                                    </td>
-                                </tr>
+                                {if $_c['show_bandwidth_plan'] == 'yes'}
+                                    <tr>
+                                        <td>{Lang::T('Bandwidth Plans')}</td>
+                                        <td>{$bandw['name_bw']}<br>{$bandw['rate_down']}{$bandw['rate_down_unit']}/{$bandw['rate_up']}{$bandw['rate_up_unit']}
+                                        </td>
+                                    </tr>
+                                {/if}
                             {/if}
                         </tbody>
                     </table>
@@ -144,7 +146,7 @@
                 </div>
                 <div class="panel-footer">
                     <a href="{$_url}order/view/{$trx['id']}/cancel" class="btn btn-danger"
-                        onclick="return confirm('{Lang::T('Cancel it?')}')">{Lang::T('Cancel')}</a>
+                        onclick="return ask(this, '{Lang::T('Cancel it?')}')">{Lang::T('Cancel')}</a>
                 </div>
             {/if}
         </div>

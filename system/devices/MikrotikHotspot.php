@@ -40,6 +40,31 @@ class MikrotikHotspot
 		}
         $this->addHotspotUser($client, $plan, $customer);
     }
+	
+	function sync_customer($customer, $plan)
+	{
+		$mikrotik = $this->info($plan['routers']);
+		$client = $this->getClient($mikrotik['ip_address'], $mikrotik['username'], $mikrotik['password']);
+		$t = ORM::for_table('tbl_user_recharges')->where('username', $customer['username'])->where('status', 'on')->find_one();
+		if ($t) {
+			$printRequest = new RouterOS\Request('/ip/hotspot/user/print');
+			$printRequest->setArgument('.proplist', '.id,limit-uptime,limit-bytes-total');
+			$printRequest->setQuery(RouterOS\Query::where('name', $customer['username']));
+			$userInfo = $client->sendSync($printRequest);
+			$id = $userInfo->getProperty('.id');
+			$uptime = $userInfo->getProperty('limit-uptime');
+			$data = $userInfo->getProperty('limit-bytes-total');
+			if (!empty($id) && (!empty($uptime) || !empty($data))) {
+				$setRequest = new RouterOS\Request('/ip/hotspot/user/set');
+				$setRequest->setArgument('numbers', $id);
+				$setRequest->setArgument('profile', $t['namebp']);
+				$client->sendSync($setRequest);
+			} else {
+				$this->add_customer($customer, $plan);
+			}
+		}
+	}
+
 
     function remove_customer($customer, $plan)
     {
@@ -214,7 +239,7 @@ class MikrotikHotspot
     function getClient($ip, $user, $pass)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $iport = explode(":", $ip);
@@ -224,7 +249,7 @@ class MikrotikHotspot
     function removeHotspotUser($client, $username)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $printRequest = new RouterOS\Request(
@@ -242,7 +267,7 @@ class MikrotikHotspot
     function addHotspotUser($client, $plan, $customer)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $addRequest = new RouterOS\Request('/ip/hotspot/user/add');
@@ -310,7 +335,7 @@ class MikrotikHotspot
     function setHotspotUser($client, $user, $pass)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $printRequest = new RouterOS\Request('/ip/hotspot/user/print');
@@ -327,7 +352,7 @@ class MikrotikHotspot
     function setHotspotUserPackage($client, $username, $plan_name)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $printRequest = new RouterOS\Request('/ip/hotspot/user/print');
@@ -344,7 +369,7 @@ class MikrotikHotspot
     function removeHotspotActiveUser($client, $username)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $onlineRequest = new RouterOS\Request('/ip/hotspot/active/print');
@@ -360,7 +385,7 @@ class MikrotikHotspot
     function getIpHotspotUser($client, $username)
     {
         global $_app_stage;
-        if ($_app_stage == 'demo') {
+        if ($_app_stage == 'Demo') {
             return null;
         }
         $printRequest = new RouterOS\Request(
